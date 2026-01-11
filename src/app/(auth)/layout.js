@@ -1,5 +1,6 @@
 "use client";
 
+import Login from "@/Components/Auth-LeftSide/Login";
 import Register from "@/Components/Auth-LeftSide/Register";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -8,6 +9,7 @@ export default function AuthLayout({ children }) {
   const pathName = usePathname();
 
   const isRegisterPage = pathName.includes("register");
+  const isLoaginPage = pathName.includes("login");
 
   return (
     <div className="flex flex-col lg:flex-row lg:min-h-screen">
@@ -36,6 +38,7 @@ export default function AuthLayout({ children }) {
 
         <section className="mt-6 w-full">
           {isRegisterPage && <Register />}
+          {isLoaginPage && <Login />}
         </section>
       </div>
     </div>
