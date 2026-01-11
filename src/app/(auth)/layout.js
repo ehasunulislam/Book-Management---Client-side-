@@ -10,7 +10,7 @@ export default function AuthLayout({ children }) {
   const isRegisterPage = pathName.includes("register");
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen">
+    <div className="flex flex-col lg:flex-row lg:min-h-screen">
       {/* Main Content (shows first on mobile & tablet) */}
       <main className="w-full lg:w-1/2 order-1 lg:order-2 p-4 lg:p-8">
         {children}
