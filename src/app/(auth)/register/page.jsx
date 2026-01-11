@@ -26,6 +26,8 @@ export default function RegisterPage() {
   const redirect = searchParams.get("redirect") || "/";
 
   const handleRegister = async (data) => {
+    setRegisterLoading(true);
+
     try {
       // image upload with ImageBB
       const registerImg = data.photo[0];
