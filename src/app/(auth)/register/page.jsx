@@ -1,32 +1,85 @@
 "use client";
 
 import useAuthInfo from "@/hooks/useAuthInfo";
+import useAxios from "@/hooks/useAxios";
 import axios from "axios";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import Swal from "sweetalert2";
 
 export default function RegisterPage() {
-    const {register, handleSubmit, formState: {errors}} = useForm();
-    const {createUserFunction, updateUserFunction} = useAuthInfo();
-    
-    const handleRegister = async(data) => {
-        // image upload with ImageBB 
-        const registerImg = data.photo[0];
-        const formData = new FormData();
-        formData.append("image", registerImg);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
+  const { createUserFunction, updateUserFunction } = useAuthInfo();
+  const axiosSecure = useAxios();
+  const [registerLoading, setRegisterLoading] = useState(false);
 
-        const image_bb_api_key = `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMAGE_BB_API_LINK}`;
-        const imageRes = await axios.post(image_bb_api_key, formData);
-        const imageURL = imageRes.data.data.url;
+  // redirect after register
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const redirect = searchParams.get("redirect") || "/";
 
-        // create user with firebase 
-        const registerFunctionality = await createUserFunction(data.email, data.password);
-        const user = registerFunctionality.user
-        console.log("after registerd", user);
+  const handleRegister = async (data) => {
+    try {
+      // image upload with ImageBB
+      const registerImg = data.photo[0];
+      const formData = new FormData();
+      formData.append("image", registerImg);
 
-        // add image with firebase 
-        await updateUserFunction(data.name, imageURL)
+      const image_bb_api_key = `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMAGE_BB_API_LINK}`;
+      const imageRes = await axios.post(image_bb_api_key, formData);
+      const imageURL = imageRes.data.data.url;
+
+      // create user with firebase
+      const registerFunctionality = await createUserFunction(
+        data.email,
+        data.password
+      );
+      const user = registerFunctionality.user;
+      console.log("after registerd", user);
+
+      // add image with firebase
+      await updateUserFunction(data.name, imageURL);
+
+      // save user to database
+      const userData = {
+        name: data.name,
+        email: data.email,
+        contact: data.contact,
+        photo: imageURL,
+        userName: data.username,
+        role: "user",
+        status: "approved",
+      };
+
+      const res = await axiosSecure.post("/create-user", userData);
+      if (res.data.insertedId) {
+        Swal.fire({
+          icon: "success",
+          title: "You registerd successfully",
+          showConfirmButton: false,
+          timer: 2500,
+        });
+
+        router.push(redirect);
+        reset();
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Something went wrong!",
+        text: err.message,
+      });
+    } finally {
+      setRegisterLoading(false);
     }
+  };
 
   return (
     <div className="register flex flex-col justify-center items-center min-h-screen">
@@ -109,9 +162,16 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 cursor-pointer"
+            disabled={registerLoading}
+            className={`w-full py-2 rounded-md cursor-pointer
+            ${
+                registerLoading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-black hover:bg-gray-800 text-white"
+                }
+            `}
           >
-            Register
+            {registerLoading ? "Registering..." : "Register"}
           </button>
         </form>
       </section>
