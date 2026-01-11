@@ -1,13 +1,31 @@
 "use client";
 
+import useAuthInfo from "@/hooks/useAuthInfo";
+import axios from "axios";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 
 export default function RegisterPage() {
     const {register, handleSubmit, formState: {errors}} = useForm();
+    const {createUserFunction, updateUserFunction} = useAuthInfo();
     
-    const handleRegister = (data) => {
-        console.log(data);
+    const handleRegister = async(data) => {
+        // image upload with ImageBB 
+        const registerImg = data.photo[0];
+        const formData = new FormData();
+        formData.append("image", registerImg);
+
+        const image_bb_api_key = `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMAGE_BB_API_LINK}`;
+        const imageRes = await axios.post(image_bb_api_key, formData);
+        const imageURL = imageRes.data.data.url;
+
+        // create user with firebase 
+        const registerFunctionality = await createUserFunction(data.email, data.password);
+        const user = registerFunctionality.user
+        console.log("after registerd", user);
+
+        // add image with firebase 
+        await updateUserFunction(data.name, imageURL)
     }
 
   return (
